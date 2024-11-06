@@ -41,13 +41,6 @@ async function displayEbook() {
   }
 }
 
-
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.location.pathname.startsWith('/read/')) {
-        displayEbook();
-    }
-});
-
 async function displayBooks() {
   try {
       const response = await fetch('/books');
@@ -72,9 +65,24 @@ async function displayBooks() {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname === '/menu') {
-      displayBooks();
+    displayBooks();
   } else if (window.location.pathname.startsWith('/read/')) {
-      displayEbook();
+    displayEbook();
+    const img = document.querySelector("#ebook-cover");
+    img.style.maxWidth = "80%";
+    const resizeImage = () => {
+      const h = innerHeight, w = innerWidth;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      if (w > h) {
+        img.style.width = `${Math.round(h * aspect * 0.8)}px`;
+        img.style.height = `${Math.round(h * 0.8)}px`;   
+      } else {
+        img.style.width = `${Math.round(w * 0.8)}px`;  
+        img.style.height = `${Math.round(w / aspect * 0.8)}px`;
+      }
+    };
+    resizeImage(); 
+    window.addEventListener("resize", resizeImage);
   } else {
 
     let miss_count = 0;
