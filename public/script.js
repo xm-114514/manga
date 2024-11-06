@@ -13,10 +13,10 @@ async function displayEbook() {
           document.getElementById('ebook-cover').src = `/books/${ebook.cover}`;
           function changePage(direction, ebook) {
             const pageCount = ebook.page.length;
-            currentPage = direction === 'L' 
+            currentPage = direction === 'L'
                 ? (currentPage === 0 ? pageCount - 1 : (currentPage - 1) % pageCount)
                 : (currentPage + 1) % pageCount;
-          
+
             console.log(ebook.page[currentPage],pageCount,currentPage)
             const pagePath = `/books/${ebook.page[currentPage]}`;
             document.getElementById('ebook-cover').src = pagePath;
@@ -46,7 +46,7 @@ async function displayBooks() {
       const response = await fetch('/books');
       const books = await response.json();
       const container = document.getElementById('books-container');
-      
+
       books.forEach(book => {
           const bookElement = document.createElement('div');
           bookElement.innerHTML = `
@@ -75,14 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const aspect = img.naturalWidth / img.naturalHeight;
       if (w > h) {
         img.style.width = `${Math.round(h * aspect * 0.8)}px`;
-        img.style.height = `${Math.round(h * 0.8)}px`;   
+        img.style.height = `${Math.round(h * 0.8)}px`;
       } else {
-        img.style.width = `${Math.round(w * 0.8)}px`;  
+        img.style.width = `${Math.round(w * 0.8)}px`;
         img.style.height = `${Math.round(w / aspect * 0.8)}px`;
       }
     };
-    resizeImage(); 
+    setTimeout(resizeImage,50);
     window.addEventListener("resize", resizeImage);
+
   } else {
 
     let miss_count = 0;
@@ -90,10 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById("password-input");
     const passwordArea = document.getElementById("password-area");
     const contentArea = document.getElementById("content-area");
-  
+
     submitButton.addEventListener("click", async function () {
       const enteredPassword = passwordInput.value;
-  
+
       try {
         const response = await fetch('/password', {
           method: 'POST',
@@ -109,10 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           miss_count++;
           alert("パスワードが間違っています");
-          
+
           if (miss_count >= 2) {
             alert("アクセスが拒否されました");
-            location.reload(); 
+            location.reload();
           }
         }
       } catch (e) {
