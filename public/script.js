@@ -22,7 +22,6 @@ async function displayEbook() {
             document.getElementById('ebook-cover').src = pagePath;
             document.getElementById('page-number').textContent = `ページ ${currentPage + 1} / ${pageCount}`;
           }
-          changePage('R', ebook);
 
           document.getElementById('next-page').addEventListener('click', () => changePage('R', ebook));
           document.getElementById('previous-page').addEventListener('click', () => changePage('L', ebook));
