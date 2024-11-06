@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>書籍一覧</title>
+    <script src="/script.js" defer></script>
+</head>
+<body>
+  <div class="main">
+    <style>
+      .main {
+        overflow: scroll !important;
+      }
+      #books-container {
+        display: ruby block;
+        text-align: center;
+      }
+      #books-container > * {
+        color: aliceblue;        
+      }
+      #books-container button {
+        border: 2px solid #000;
+        border-radius: 100vh;
+        padding: 1px 40px;
+        background: darkorange;
+        color: black;
+        font-size: 20px;
+      }
+      #books-container div {
+        margin-top: 30px;
+      }
+      #books-container h2 {
+        border-bottom: 1px solid;
+        width: fit-content;
+        margin: 0 auto;
+      }
+    </style>
+    <h1>書籍一覧</h1>
+
+    <div id="books-container"></div>
+      <ul class="menu">
+        <li><a onclick="process_exit();">process exit</a></li>
+        <li><a onclick="toggleDarkMode();">dark</a></li>
+        <li><a onclick="media_splice('img');">del img</a></li>
+        <li><a onclick="undoMediaDeletion('image');">取消 img</a></li>
+        <li><a onclick="choice();">choice</a></li>
+        <li><a onclick="choice_Save();">上書き</a></li>
+      </ul>
+    <div class="remove-btn">
+      <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
+      <button onclick="footer_remove();">hidden</button>
+    </div>
+  </div>
+
+  <script src="/content.js"></script>
+
+</body>
+</html>
