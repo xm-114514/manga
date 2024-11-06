@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>doujin.si</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="logo.png">
+</head>
+
+<body>
+  <div class="password-container">
+    <div id="logo-area"><img src="logo.png"></div>
+    <div id="password-area">
+      <input type="password" id="password-input" placeholder="Enter password">
+      <button id="submit-button">Submit</button>
+    </div>
+  </div>
+  <div class="main">
+    <ul class="menu">
+      <li><a onclick="process_exit();">process exit</a></li>
+      <li><a onclick="toggleDarkMode();">dark</a></li>
+      <li><a onclick="media_splice('img');">del img</a></li>
+      <li><a onclick="undoMediaDeletion('image');">取消 img</a></li>
+      <li><a onclick="choice();">choice</a></li>
+      <li><a onclick="choice_Save();">上書き</a></li>
+    </ul>
+  </div>
+  <div class="remove-btn">
+    <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
+    <button onclick="footer_remove();">hidden</button>
+  </div>
+  <div class="background">
+    <div class="side">
+      <div class="left-side">
+        <button onclick="changeMedia('L', MEDIA_TYPE.IMAGE);">back image</button>
+        <button onclick="changeMedia('R', MEDIA_TYPE.IMAGE);">next image</button>
+        <textarea class="image_input" cols="18" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="bottom">
+      <input max="10" min="0.2" type="range" id="range" value="10" step="0.1">
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+
+</html>
