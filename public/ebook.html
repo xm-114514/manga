@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電子書籍詳細</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/script.js" defer></script>
+</head>
+<body>
+    <style>h1,p {
+      color: aliceblue;
+    }</style>
+    <div class="main">
+      <h1 id="ebook-title"></h1>
+      <p id="ebook-caption"></p>
+      <img id="ebook-cover" alt="電子書籍の表紙"  width="300px">
+      <div id="page-number"></div>
+      <ul class="menu">
+        <li><a onclick="process_exit();">process exit</a></li>
+        <li><a onclick="toggleDarkMode();">dark</a></li>
+      </ul>
+    </div>
+    <div class="remove-btn">
+      <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
+    </div>
+    <div class="background">
+      <div class="side">
+        <div class="left-side">
+          <div id="page-controls">
+            <button id="previous-page">前へ</button>
+            <button id="next-page">次へ</button>
+        </div>
+        </div>
+      </div>
+  
+    <script src="/content.js"></script>
+</body>
+</html>
