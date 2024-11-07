@@ -18,7 +18,7 @@
         text-align: center;
       }
       #books-container > * {
-        color: aliceblue;        
+        color: aliceblue;
       }
       #books-container button {
         border: 2px solid #000;
@@ -34,13 +34,36 @@
       #books-container h2 {
         border-bottom: 1px solid;
         width: fit-content;
+        max-width: 100%;
+        width: 150px;
         margin: 0 auto;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     </style>
     <h1>書籍一覧</h1>
 
     <div id="books-container"></div>
-      <ul class="menu">
+    <style>
+      footer {
+        width: 100vw;
+        background-color: #000;
+        height: 50px;
+        text-align: center;
+        margin-top: 20px;
+      }
+      footer button {
+        margin-top: 5px;
+        padding: 10px;
+      }
+    </style>
+    <footer>
+    <button onclick="location.href='/'">home</button>
+      <button onclick="location.href='/books/'">json</button>
+    </footer>
+    <ul class="menu">
         <li><a onclick="process_exit();">process exit</a></li>
         <li><a onclick="toggleDarkMode();">dark</a></li>
         <li><a onclick="media_splice('img');">del img</a></li>
@@ -48,9 +71,9 @@
         <li><a onclick="choice();">choice</a></li>
         <li><a onclick="choice_Save();">上書き</a></li>
       </ul>
+
     <div class="remove-btn">
       <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
-      <button onclick="footer_remove();">hidden</button>
     </div>
   </div>
 
