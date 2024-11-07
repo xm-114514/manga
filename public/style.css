@@ -247,7 +247,7 @@ li a {
   padding: 1px 5px;
   position: fixed;
   right: 5px;
-  bottom: 145px;
+  bottom: 40px;
   z-index: 12;
 }
 
@@ -389,4 +389,9 @@ li a {
     padding: 7px;
     background: #000;
   }
+}
+
+
+#page-controls > button{
+  width: 30vw;
 }
