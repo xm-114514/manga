@@ -1,12 +1,19 @@
 const f=(e,a=!1,q=document)=>(!a?q.querySelector(e):q.querySelectorAll(e));
 
 let current = 0;
+
+function setting() {
+  const { innerHeight: h, innerWidth: w } = window;
+  const ctx = document.querySelector('#books-container');
+  Object.assign(ctx.style, w > h ? { width: '90vw', margin: '0 auto' } : { width: '', margin: '' });
+}
+
 function resizeImage () {
   const img = document.querySelector("#ebook-cover");
   const h = innerHeight, w = innerWidth;
   const aspect = img.naturalWidth / img.naturalHeight;
-  const [width, height] = (w > h) 
-   ? [`${Math.round(h * aspect * 0.8)}px`, `${Math.round(h * 0.8)}px`] 
+  const [width, height] = (w > h)
+   ? [`${Math.round(h * aspect * 0.8)}px`, `${Math.round(h * 0.8)}px`]
    : [`${Math.round(w * 0.8)}px`, `${Math.round(w / aspect * 0.8)}px`];
   Object.assign(img.style, { width, height });
 };
@@ -20,6 +27,7 @@ function changePage(direction, ebook) {
   f('#page-number').textContent = `ページ ${current + 1} / ${p}`;
   resizeImage();
 }
+
 async function displayEbook() {
   const urlParts = window.location.pathname.split('/');
   const title = decodeURIComponent(urlParts[urlParts.length - 1]);
@@ -63,6 +71,7 @@ async function displayBooks() {
 document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname === '/menu') {
     displayBooks();
+    setting();
   } else if (window.location.pathname.startsWith('/read/')) {
     displayEbook();
     setInterval(resizeImage,100);
