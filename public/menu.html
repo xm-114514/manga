@@ -10,6 +10,9 @@
 <body>
   <div class="main">
     <style>
+      h1 {
+        color: #fff;
+      }
       .main {
         overflow: scroll !important;
       }
@@ -42,9 +45,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      
     </style>
     <h1>書籍一覧</h1>
-
+    <div id="pagination-controls"></div>
     <div id="books-container"></div>
     <style>
       footer {
@@ -58,22 +62,55 @@
         margin-top: 5px;
         padding: 10px;
       }
+      #pagination-controls {
+        text-align: center;
+      }
+      [aria-label="mobile-container"] {
+        width: fit-content;
+        margin: 0 auto;
+      }
+      [aria-label="tablet-container"] {
+        max-width: 80% !important;
+        margin: 0 auto;
+      }
+      [aria-label="desktop-container"] {
+        max-width: 70% !important;
+        margin: 0 auto;
+      }
+      #pagination-controls {
+        margin-top: 10px;
+        opacity: 1;
+        color: #fff;
+      }
+      #pagination-controls > button {
+        border-radius: 100vh;
+        padding: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        color: #000;
+      }
     </style>
     <footer>
-    <button onclick="location.href='/'">home</button>
+      <button onclick="location.href='/'">home</button>
+      <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
       <button onclick="location.href='/books/'">json</button>
     </footer>
+
+    <!-- safariのゴミ仕様のせい -->
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
     <ul class="menu">
         <li><a onclick="process_exit();">process exit</a></li>
         <li><a onclick="toggleDarkMode();">dark</a></li>
-        <li><a onclick="media_splice('img');">del img</a></li>
-        <li><a onclick="undoMediaDeletion('image');">取消 img</a></li>
-        <li><a onclick="choice();">choice</a></li>
-        <li><a onclick="choice_Save();">上書き</a></li>
       </ul>
 
     <div class="remove-btn">
-      <button style="bottom:170px;" onclick="menu_toggle();">Menu</button>
     </div>
   </div>
 
