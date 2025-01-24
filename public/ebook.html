@@ -19,6 +19,26 @@
       <ul class="menu">
         <li><a onclick="process_exit();">process exit</a></li>
         <li><a onclick="toggleDarkMode();">dark</a></li>
+        <li>
+          <a onclick="
+            const book = document.querySelector('#ebook-cover');
+            const modes = {
+              1: { css: '0 auto', log: 'center -> light', text: 'light', next: 2 },
+              2: { css: '0 0 0 auto', log: 'light -> left', text: 'left', next: 3 },
+              3: { css: 'auto 0 0 0', log: 'left -> center', text: 'center', next: 1 }
+            };
+            const currentMode = parseInt(this.getAttribute('client_view_mode'), 10);
+            const nextMode = modes[currentMode];
+            if (book && nextMode) {
+              book.style.margin = nextMode.css; 
+              this.textContent = nextMode.text; 
+              console.log(nextMode.log);
+              this.setAttribute('client_view_mode', nextMode.next);
+            } else {
+              console.log('Error: Invalid mode');
+            }
+          " client_view_mode="1">center</a>
+        </li>
       </ul>
     </div>
     <div class="remove-btn">
