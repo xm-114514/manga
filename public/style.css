@@ -6,6 +6,7 @@
 }
 
 body {
+  overflow: hidden;
   background: linear-gradient(to right top,
       rgb(30, 55, 84),
       rgb(82, 176, 173));
@@ -68,15 +69,6 @@ video {
   right: 0px;
 }
 
-/* ソースが存在しないvideoタグは非表示 */
-video:not([src]) {
-  display: none;
-}
-
-video[src] {
-  display: block;
-}
-
 #ebook-cover:not(:has(video[src])) img {
   display: block;
   margin: 0 auto;
@@ -98,12 +90,6 @@ video[src] {
 
 .display_none {
   display: none;
-}
-
-.only_mode {
-  max-width: 100vw !important;
-  max-height: 82vh !important;
-  top: 25px !important;
 }
 
 .transparent {
@@ -326,15 +312,6 @@ li a {
 }
 
 @media screen and (max-width: 600px) and (orientation: portrait) {
-  #clock {
-    margin-top: -6px;
-  }
-
-  #clock span {
-    padding-bottom: 4px;
-    font-size: 10px;
-  }
-
   .background .side {
     top: -60px;
   }
@@ -390,8 +367,6 @@ li a {
     background: #000;
   }
 }
-
-
 #page-controls > button{
   width: 30vw;
 }
