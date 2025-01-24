@@ -20,7 +20,7 @@ function authMiddleware(req, res, next) {
   if (isAuthenticated && clientIP === authenticatedIP) {
     next();
   } else {
-    res.status(401).send('Unauthorized');
+    res.status(401).json({ redirect: '/' });
   }
 }
 
@@ -35,19 +35,17 @@ app.post('/password', (req, res) => {
     authenticatedIP = req.ip;
     res.status(200).send('OK');
   } else {
-    res.status(401).send('Unauthorized');
+    res.status(401).json({ redirect: '/' });
   }
 });
 
 app.get('/menu', authMiddleware, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'menu.html'));  // menu.htmlを返す
+  res.sendFile(path.join(__dirname, 'public', 'menu.html'));
 });
 
-// 書籍データを取得するエンドポイント
 app.get('/books', authMiddleware, (req, res) => {
-  res.json(ebooks);  // 書籍リストをJSONで返す
+  res.json(ebooks);
 });
-
 
 app.get('/read/:title', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ebook.html'));
@@ -62,6 +60,23 @@ app.get('/books/:title/cover', authMiddleware, (req, res) => {
   } else {
     res.status(404).send('Cover not found');
   }
+});
+app.get('/books/paginated', authMiddleware, (req, res) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  const paginatedBooks = ebooks.slice(startIndex, endIndex);
+  const totalBooks = ebooks.length;
+
+  res.json({
+    page,
+    limit,
+    totalBooks,
+    totalPages: Math.ceil(totalBooks / limit),
+    books: paginatedBooks,
+  });
 });
 
 
