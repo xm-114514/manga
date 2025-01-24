@@ -25,7 +25,7 @@ function changePage(direction, ebook) {
   const pagePath = `/books/${ebook.page[current]}`;
   f('#ebook-cover').src = pagePath;
   f('#page-number').textContent = `ページ ${current + 1} / ${p}`;
-  resizeImage();
+  setTimeout(() => resizeImage(), 10);
 }
 
 async function displayEbook() {
@@ -40,6 +40,7 @@ async function displayEbook() {
           f('#ebook-cover').src = `/books/${ebook.cover}`;
           f('#next-page').addEventListener('click', () => changePage('R', ebook));
           f('#previous-page').addEventListener('click', () => changePage('L', ebook));
+          f('#ebook-cover').addEventListener('click', () => changePage('R', ebook));
           window.addEventListener("keydown", (k) => {
             if (k.key == "ArrowRight") changePage('R', ebook); else if (k.key == "ArrowLeft") changePage('L', ebook);
           });
@@ -49,11 +50,19 @@ async function displayEbook() {
   }
 }
 
+let currentPage = 1;
+let totalPages = 1;
+const booksPerPage = 10;
+
 async function displayBooks() {
   try {
-      const response = await fetch('/books');
-      const books = await response.json();
+      const response = await fetch(`/books/paginated?page=${currentPage}&limit=${booksPerPage}`);
+      const { books, totalPages: total } = await response.json();
+      totalPages = total;
+
       const container = f('#books-container');
+      container.innerHTML = '';
+
       books.forEach(book => {
           const bookElement = document.createElement('div');
           bookElement.innerHTML = `
@@ -63,8 +72,33 @@ async function displayBooks() {
           <button onclick="location.href='/read/${book.title}'">読む</button>`;
           container.appendChild(bookElement);
       });
+
+      updatePaginationControls(); 
   } catch (error) {
       console.error("書籍一覧の取得エラー:", error);
+  }
+}
+function updatePaginationControls() {
+  const controls = f('#pagination-controls', !0);
+  for (let i=0; i<controls.length; i++) {
+    controls[i].innerHTML = `
+    <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>前のページ</button>
+    <span>ページ ${currentPage} / ${totalPages}</span>
+    <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>次のページ</button>
+    `;
+    f('#prev-page',!0)[i].addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        displayBooks();
+      }
+    });
+
+    f('#next-page',!0)[i].addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        displayBooks();
+      }
+    });
   }
 }
 
@@ -72,11 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname === '/menu') {
     displayBooks();
     setting();
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'pagination-controls';
+    f('#books-container').after(controlsContainer);
   } else if (window.location.pathname.startsWith('/read/')) {
     displayEbook();
-    setInterval(resizeImage,100);
+    setInterval(resizeImage, 30);
   } else {
-
     let miss_count = 0;
     const submitButton = f("#submit-button");
     const passwordInput = f("#password-input");
@@ -113,3 +149,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+const Container = document.querySelector("#books-container");
+function resizeWindow() {
+  if (!Container) return;
+  const w = innerWidth;
+  if (w < 768)  Container.ariaLabel = 'mobile-container'; else if (w >= 768 && w < 1024) Container.ariaLabel = 'tablet-container'; else Container.ariaLabel = 'desktop-container';
+  
+}
+resizeWindow();
+window.addEventListener("resize", resizeWindow)
