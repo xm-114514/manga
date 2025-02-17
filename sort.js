@@ -21,7 +21,6 @@ async function generateEbooksJson() {
 
             let caption = `N/A`;
 
-            // tags.json が存在する場合は読み込む
             const tagsPath = path.join(folderPath, 'tags.json');
             if (files.includes('tags.json')) {
                 try {
