@@ -49,14 +49,19 @@ async function displayEbook() {
     console.error("書籍の取得エラー:", error);
   }
 }
-
 let currentPage = 1;
+
 let totalPages = 1;
 const booksPerPage = 10;
-
+let currentSort = 'date'; // デフォルトは作成日順
+let currentQuery = "",
+    currentMode = "",
+    currentExclude = "";
 async function displayBooks() {
+
+  console.log(`Fetching: /books/paginated?page=${currentPage}&limit=${booksPerPage}&sort=${currentSort}&query=${currentQuery}&mode=${currentMode}&exclude=${currentExclude}`);
   try {
-      const response = await fetch(`/books/paginated?page=${currentPage}&limit=${booksPerPage}`);
+      const response = await fetch(`/books/paginated?page=${currentPage}&limit=${booksPerPage}&sort=${currentSort}&query=${encodeURIComponent(currentQuery)}&mode=${currentMode}&exclude=${encodeURIComponent(currentExclude)}`);
       const { books, totalPages: total } = await response.json();
       totalPages = total;
 
@@ -68,48 +73,98 @@ async function displayBooks() {
           bookElement.innerHTML = `
           <span style="display:flex;"><h2>${book.title}</h2>
           <p>${book.page.length}p</p></span>
-          <img #canvas src="/books/${encodeURIComponent(book.cover)}" alt="${book.title}の表紙" width="150"><br>
+          <img src="/books/${encodeURIComponent(book.cover)}" alt="${book.title}の表紙" width="150"><br>
           <button onclick="location.href='/read/${book.title}'">読む</button>`;
           container.appendChild(bookElement);
       });
 
-      updatePaginationControls(); 
+      updatePaginationControls();
   } catch (error) {
       console.error("書籍一覧の取得エラー:", error);
   }
 }
+function addSearchControls() {
+  const searchContainer = document.createElement('div');
+  searchContainer.id = "searchContainer";
+  searchContainer.innerHTML = `
+  <label for="search">検索: </label>
+  <input type="text" id="search" placeholder="タイトル検索">
+  <label for="mode">モード: </label>
+  <select id="mode">
+      <option value="partial">部分一致</option>
+      <option value="exact">完全一致</option>
+  </select>
+  <label for="exclude">除外ワード: </label>
+  <input type="text" id="exclude" placeholder="除外ワード（スペース区切り）">
+  <button id="search-btn">検索</button>
+  `;
+  f('#books-container').before(searchContainer);
+  f('#search-btn').addEventListener('click', () => {
+      currentQuery = f('#search').value.trim() || ""; 
+      currentMode = f('#mode').value;
+      currentExclude = f('#exclude').value.trim() || "";
+      currentPage = 1;
+      displayBooks();
+  });
+}
 function updatePaginationControls() {
-  const controls = f('#pagination-controls', !0);
-  for (let i=0; i<controls.length; i++) {
-    controls[i].innerHTML = `
-    <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>前のページ</button>
-    <span>ページ ${currentPage} / ${totalPages}</span>
-    <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>次のページ</button>
-    `;
-    f('#prev-page',!0)[i].addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        displayBooks();
-      }
-    });
+  const controls = f('#pagination-controls', true);
+  for (let i = 0; i < controls.length; i++) {
+      controls[i].innerHTML = `
+      <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>前のページ</button>
+      <span>ページ ${currentPage} / ${totalPages}</span>
+      <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>次のページ</button>
+      `;
 
-    f('#next-page',!0)[i].addEventListener('click', () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        displayBooks();
-      }
-    });
+      f('#prev-page', true)[i].addEventListener('click', () => {
+          if (currentPage > 1) {
+              currentPage--;
+              displayBooks();
+          }
+      });
+
+      f('#next-page', true)[i].addEventListener('click', () => {
+          if (currentPage < totalPages) {
+              currentPage++;
+              displayBooks();
+          }
+      });
   }
 }
+function addSortControls() {
+  const sortContainer = document.createElement('div');
+  sortContainer.id = "sortContainer";
+  sortContainer.innerHTML = `
+  <label for="sort">並び替え: </label>
+  <select id="sort">
+      <option value="date-desc">作成日（新しい順）</option>
+      <option value="date-asc">作成日（古い順）</option>
+      <option value="title">タイトル順</option>
+      <option value="pages-asc">ページ数（少ない順）</option>
+      <option value="pages-desc">ページ数（多い順）</option>
+  </select>
+  `;
+
+  f('#books-container').before(sortContainer);
+  f('#sort').addEventListener('change', (e) => {
+      currentSort = e.target.value;
+      currentPage = 1;
+      displayBooks();
+  });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname === '/menu') {
-    displayBooks();
-    setting();
-    const controlsContainer = document.createElement('div');
-    controlsContainer.id = 'pagination-controls';
-    f('#books-container').after(controlsContainer);
-  } else if (window.location.pathname.startsWith('/read/')) {
+      addSearchControls(); 
+      addSortControls();  
+      displayBooks();
+      setting();
+      const controlsContainer = document.createElement('div');
+      controlsContainer.id = 'pagination-controls';
+      f('#books-container').after(controlsContainer);
+  }
+  else if (window.location.pathname.startsWith('/read/')) {
     displayEbook();
     setInterval(resizeImage, 30);
   } else {
