@@ -42,10 +42,83 @@ app.post('/password', (req, res) => {
 app.get('/menu', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'menu.html'));
 });
-
 app.get('/books', authMiddleware, (req, res) => {
-  res.json(ebooks);
+  res.json(ebooks);  // 書籍リストをJSONで返す
 });
+
+app.get('/books/paginated', authMiddleware, (req, res) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const sortType = req.query.sort || 'date-desc'; // デフォルトは作成日降順
+  const searchQuery = req.query.query ? req.query.query.trim() : '';
+  const searchMode = req.query.mode || 'partial'; // `exact`(完全一致) or `partial`(部分一致)
+  const excludeWords = req.query.exclude ? req.query.exclude.trim().split(/\s+/) : []; // 除外ワード（スペース区切り）
+
+  let filteredEbooks = [...ebooks];
+
+  // **検索機能（タイトル & キャプション）**
+  if (searchQuery) {
+      filteredEbooks = filteredEbooks.filter(book => {
+          const targetText = `${book.title} | ${book.caption}`; // タイトル + タグ情報
+          if (searchMode === 'exact') {
+              return targetText === searchQuery; // 完全一致
+          } else {
+              return targetText.includes(searchQuery); // 部分一致
+          }
+      });
+  }
+
+  // **マイナス検索（除外ワード）**
+  if (excludeWords.length > 0) {
+      filteredEbooks = filteredEbooks.filter(book => {
+          const targetText = `${book.title} | ${book.caption}`; // タイトル + タグ情報
+          return !excludeWords.some(word => targetText.includes(word));
+      });
+  }
+
+  // **ソート処理**
+  switch (sortType) {
+      case 'title':
+          filteredEbooks.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+          break;
+      case 'pages-asc': // ページ数が少ない順
+          filteredEbooks.sort((a, b) => a.page.length - b.page.length);
+          break;
+      case 'pages-desc': // ページ数が多い順
+          filteredEbooks.sort((a, b) => b.page.length - a.page.length);
+          break;
+      case 'date-asc': // 作成日が古い順
+          filteredEbooks.sort((a, b) => {
+              const aTime = fs.statSync(path.join(__dirname, 'books', a.title)).birthtimeMs;
+              const bTime = fs.statSync(path.join(__dirname, 'books', b.title)).birthtimeMs;
+              return aTime - bTime;
+          });
+          break;
+      case 'date-desc': // 作成日が新しい順（デフォルト）
+      default:
+          filteredEbooks.sort((a, b) => {
+              const aTime = fs.statSync(path.join(__dirname, 'books', a.title)).birthtimeMs;
+              const bTime = fs.statSync(path.join(__dirname, 'books', b.title)).birthtimeMs;
+              return bTime - aTime;
+          });
+          break;
+  }
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const paginatedBooks = filteredEbooks.slice(startIndex, endIndex);
+
+  res.json({
+      page,
+      limit,
+      totalBooks: filteredEbooks.length,
+      totalPages: Math.ceil(filteredEbooks.length / limit),
+      books: paginatedBooks,
+  });
+});
+
+
+
 
 app.get('/read/:title', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ebook.html'));
@@ -54,7 +127,6 @@ app.get('/read/:title', authMiddleware, (req, res) => {
 app.get('/books/:title/cover', authMiddleware, (req, res) => {
   const title = req.params.title;
   const ebook = ebooks.find(book => book.title === title);
-
   if (ebook) {
     res.sendFile(path.join(__dirname, ebook.cover));
   } else {
@@ -66,10 +138,8 @@ app.get('/books/paginated', authMiddleware, (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 10;
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
-
   const paginatedBooks = ebooks.slice(startIndex, endIndex);
   const totalBooks = ebooks.length;
-
   res.json({
     page,
     limit,
@@ -83,3 +153,4 @@ app.get('/books/paginated', authMiddleware, (req, res) => {
 app.get('/stop', () => process.exit());
 
 app.listen(port, IP, () => console.log(`http://${IP}:${port}`));
+
