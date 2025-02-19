@@ -111,7 +111,7 @@ async function displayEbook(page) {
   const urlParts = window.location.pathname.split('/');
   const title = decodeURIComponent(urlParts[urlParts.length - 1]);
   try {
-      const response = await fetch(`/books`);
+      const response = await fetch("/books");
       const books = await response.json();
       const ebook = books.find(book => book.title === title);
       if (ebook) {
