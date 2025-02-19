@@ -20,7 +20,7 @@ function authMiddleware(req, res, next) {
   if (isAuthenticated && clientIP === authenticatedIP) {
     next();
   } else {
-    res.status(401).json({ redirect: '/' });
+    res.status(401).sendFile(path.join(__dirname, 'public', '401.html'));
   }
 }
 
@@ -43,58 +43,54 @@ app.get('/menu', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'menu.html'));
 });
 app.get('/books', authMiddleware, (req, res) => {
-  res.json(ebooks);  // 書籍リストをJSONで返す
+  res.json(ebooks);
 });
 
 app.get('/books/paginated', authMiddleware, (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
-  const sortType = req.query.sort || 'date-desc'; // デフォルトは作成日降順
+  const sortType = req.query.sort || 'date-desc';
   const searchQuery = req.query.query ? req.query.query.trim() : '';
-  const searchMode = req.query.mode || 'partial'; // `exact`(完全一致) or `partial`(部分一致)
-  const excludeWords = req.query.exclude ? req.query.exclude.trim().split(/\s+/) : []; // 除外ワード（スペース区切り）
+  const searchMode = req.query.mode || 'partial'
+  const excludeWords = req.query.exclude ? req.query.exclude.trim().split(/\s+/) : [];
 
   let filteredEbooks = [...ebooks];
 
-  // **検索機能（タイトル & キャプション）**
   if (searchQuery) {
       filteredEbooks = filteredEbooks.filter(book => {
-          const targetText = `${book.title} | ${book.caption}`; // タイトル + タグ情報
+          const targetText = `${book.title} | ${book.caption}`;
           if (searchMode === 'exact') {
-              return targetText === searchQuery; // 完全一致
+              return targetText === searchQuery;
           } else {
-              return targetText.includes(searchQuery); // 部分一致
+              return targetText.includes(searchQuery);
           }
       });
   }
-
-  // **マイナス検索（除外ワード）**
   if (excludeWords.length > 0) {
       filteredEbooks = filteredEbooks.filter(book => {
-          const targetText = `${book.title} | ${book.caption}`; // タイトル + タグ情報
+          const targetText = `${book.title} | ${book.caption}`;
           return !excludeWords.some(word => targetText.includes(word));
       });
   }
 
-  // **ソート処理**
   switch (sortType) {
       case 'title':
           filteredEbooks.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
           break;
-      case 'pages-asc': // ページ数が少ない順
+      case 'pages-asc':
           filteredEbooks.sort((a, b) => a.page.length - b.page.length);
           break;
-      case 'pages-desc': // ページ数が多い順
+      case 'pages-desc':
           filteredEbooks.sort((a, b) => b.page.length - a.page.length);
           break;
-      case 'date-asc': // 作成日が古い順
+      case 'date-asc':
           filteredEbooks.sort((a, b) => {
               const aTime = fs.statSync(path.join(__dirname, 'books', a.title)).birthtimeMs;
               const bTime = fs.statSync(path.join(__dirname, 'books', b.title)).birthtimeMs;
               return aTime - bTime;
           });
           break;
-      case 'date-desc': // 作成日が新しい順（デフォルト）
+      case 'date-desc':
       default:
           filteredEbooks.sort((a, b) => {
               const aTime = fs.statSync(path.join(__dirname, 'books', a.title)).birthtimeMs;
@@ -149,8 +145,34 @@ app.get('/books/paginated', authMiddleware, (req, res) => {
   });
 });
 
+const favoritesPath = path.join(__dirname, 'favorites.json');
+
+app.get('/fav', (req, res) => {
+    try {
+        if (!fs.existsSync(favoritesPath)) {
+            return res.json([]); 
+        }
+        const favorites = JSON.parse(fs.readFileSync(favoritesPath, 'utf8'));
+        res.json(favorites);
+    } catch (error) {
+        console.error("お気に入りリストの取得エラー:", error);
+        res.json([]);
+    }
+});
+
+app.post('/upload_list', (req, res) => {
+    try {
+        const favList = req.body;
+        if (!Array.isArray(favList)) {
+            return res.status(400).json({ error: "無効なデータ形式" });
+        }
+        fs.writeFileSync(favoritesPath, JSON.stringify(favList, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (error) {
+        console.error("お気に入りリストの保存エラー:", error);
+        res.status(500).json({ error: "サーバーエラー" });
+    }
+});
 
 app.get('/stop', () => process.exit());
-
 app.listen(port, IP, () => console.log(`http://${IP}:${port}`));
-
