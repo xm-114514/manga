@@ -19,6 +19,16 @@
       <ul class="menu">
         <li><a onclick="process_exit();">process exit</a></li>
         <li><a onclick="toggleDarkMode();">dark</a></li>
+        <li><a onclick="fav();">current_path</a></li>
+        <li><a onclick="location.href='/favorite.html'">GoToFavPage</a></li>
+        <li><a onclick="
+          const title = document.querySelector('#ebook-title');
+          if (title.style.display == 'none') {
+            title.style.display = 'block';
+          } else {
+            title.style.display = 'none';
+          }
+        ">delete title</a></li>
         <li>
           <a onclick="
             const book = document.querySelector('#ebook-cover');
