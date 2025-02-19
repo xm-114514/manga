@@ -10,7 +10,6 @@
             text-align: center;
             background-color: #f8f8f8;
             margin: 0;
-            padding: 20px;
         }
         h1 {
             color: #333;
@@ -37,7 +36,6 @@
         li a {
             text-decoration: none;
             color: #0275d8;
-            flex-grow: 1;
             text-align: left;
         }
         button {
@@ -95,6 +93,7 @@
         #view img {
             width: inherit;
         }
+
     </style>
 
     <script>
@@ -124,19 +123,54 @@
                 favList.forEach((item, index) => {
                     const listItem = document.createElement("li");
                     const link = document.createElement("a");
-                    link.href = "books/"+item;
-                    link.textContent = String(item).replace("http://","");
+                    link.href = "books/" + item;
+                    link.textContent = String(item).replace("http://", "");
                     link.target = "_blank";
                     link.style.overflow = "overlay";
-    
+
                     const deleteButton = document.createElement("button");
                     deleteButton.textContent = "削除";
                     deleteButton.onclick = () => removeFavorite(index, item);
-    
+
                     listItem.appendChild(link);
                     listItem.appendChild(deleteButton);
+
+                    let view = null;
+
+                    function showPreview() {
+                        if (!view) {
+                            view = document.createElement("img");
+                            view.src = "books/" + item;
+                            view.style.width = "auto";
+                            view.style.height = "100px";
+                            view.style.position = "absolute";
+                            view.style.left = "50%";
+                            view.style.transform = "translateX(-50%)";
+                            view.style.border = "1px solid #ddd";
+                            view.style.borderRadius = "5px";
+                            view.style.boxShadow = "0px 2px 8px rgba(0,0,0,0.2)";
+                            listItem.appendChild(view);
+                        }
+                    }
+
+                    function hidePreview() {
+                        if (view) {
+                            view.remove();
+                            view = null;
+                        }
+                    }
+
+                    // タップイベント（iPad対応）
+                    listItem.addEventListener("touchstart", showPreview);
+                    listItem.addEventListener("touchend", hidePreview);
+
+                    // マウスイベント（PC対応）
+                    listItem.addEventListener("mouseenter", showPreview);
+                    listItem.addEventListener("mouseleave", hidePreview);
+
                     favListElement.appendChild(listItem);
                 });
+
     
                 // 最初の画像を表示
                 currentIndex = 0;
