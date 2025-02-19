@@ -1,6 +1,7 @@
 const f=(e,a=!1,q=document)=>(!a?q.querySelector(e):q.querySelectorAll(e));
 
 let current = 0;
+let current_path = null;
 
 function setting() {
   const { innerHeight: h, innerWidth: w } = window;
@@ -18,17 +19,93 @@ function resizeImage () {
   Object.assign(img.style, { width, height });
 };
 
+
+const fav_list = [];
+
+const fetch_fav_list = async () => {
+    try {
+        const response = await fetch("/fav");
+        const books = await response.json();
+        fav_list.length = 0;
+        fav_list.push(...books);
+        return books;
+    } catch (error) {
+        console.error("お気に入りリストの取得エラー:", error);
+    }
+};
+
+const send_fav_list = async () => {
+  if (fav_list.length == 0) return;
+    try {
+        await fetch("/upload_list", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fav_list)
+        });
+    } catch (error) {
+        console.error("お気に入りリストの送信エラー:", error);
+    }
+};
+
+function fav() {
+    if (!current_path || fav_list.includes(current_path)) return;
+
+    fav_list.push(current_path);
+    send_fav_list();
+
+    const popup = document.createElement("div");
+    popup.id = "popup";
+    popup.textContent = `${current_path} をお気に入りに追加 👍`;
+
+    popup.style.cssText = `
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+        background: rgba(184, 184, 184, 0.8);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        border: 1px solid #fff;
+        opacity: 0;
+        transition: opacity 0.5s;
+        z-index: 9999;
+    `;
+
+    document.body.appendChild(popup);
+    fadeInOut(popup);
+}
+
+async function fadeInOut(element) {
+    await delay(10);
+    element.style.opacity = "1";
+    await delay(1500);
+    element.style.opacity = "0";
+    await delay(500);
+    element.remove();
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+document.addEventListener("DOMContentLoaded", fetch_fav_list);
+
+
+
 function changePage(direction, ebook) {
   const p = ebook.page.length;
   current = direction === 'L' ? (current === 0 ? p - 1 : (current - 1) % p) : (current + 1) % p;
-  console.log(ebook.page[current],p,current)
+  current_path = ebook.page[current];
+  console.log(ebook.page[current],p,current);
   const pagePath = `/books/${ebook.page[current]}`;
   f('#ebook-cover').src = pagePath;
   f('#page-number').textContent = `ページ ${current + 1} / ${p}`;
   setTimeout(() => resizeImage(), 10);
 }
 
-async function displayEbook() {
+async function displayEbook(page) {
   const urlParts = window.location.pathname.split('/');
   const title = decodeURIComponent(urlParts[urlParts.length - 1]);
   try {
@@ -36,53 +113,82 @@ async function displayEbook() {
       const books = await response.json();
       const ebook = books.find(book => book.title === title);
       if (ebook) {
-          f('#ebook-title').textContent = ebook.title;
+        if (page) {
+          console.log("page",page)
+          f('#ebook-cover').src = `/books/${ebook.page[page]}`;
+          current = page;
+        } else {
           f('#ebook-cover').src = `/books/${ebook.cover}`;
-          f('#next-page').addEventListener('click', () => changePage('R', ebook));
-          f('#previous-page').addEventListener('click', () => changePage('L', ebook));
-          f('#ebook-cover').addEventListener('click', () => changePage('R', ebook));
-          window.addEventListener("keydown", (k) => {
-            if (k.key == "ArrowRight") changePage('R', ebook); else if (k.key == "ArrowLeft") changePage('L', ebook);
-          });
+        }
+        current_path = f('#ebook-cover').src;
+        f('#ebook-title').textContent = ebook.title;
+        f('#next-page').addEventListener('click', () => changePage('R', ebook));
+        f('#previous-page').addEventListener('click', () => changePage('L', ebook));
+        document.querySelector("#ebook-cover").addEventListener("click", (event) => {
+            const imgWidth = event.target.clientWidth;
+            const clickX = event.clientX - event.target.getBoundingClientRect().left;
+            if (clickX < imgWidth / 2) {
+              changePage('R', ebook)
+            } else {
+              changePage('L', ebook)
+            }
+        });
+        window.addEventListener("keydown", (k) => {
+          if (k.key == "ArrowRight") changePage('R', ebook); else if (k.key == "ArrowLeft") changePage('L', ebook);
+        });
       } else f('#ebook-title').textContent = "書籍が見つかりません";
   } catch (error) {
     console.error("書籍の取得エラー:", error);
   }
 }
-let currentPage = 1;
 
+
+let currentPage = 1;
 let totalPages = 1;
 const booksPerPage = 10;
-let currentSort = 'date'; // デフォルトは作成日順
+let currentSort = 'date';
 let currentQuery = "",
     currentMode = "",
     currentExclude = "";
 async function displayBooks() {
+  const params = new URLSearchParams();
 
-  console.log(`Fetching: /books/paginated?page=${currentPage}&limit=${booksPerPage}&sort=${currentSort}&query=${currentQuery}&mode=${currentMode}&exclude=${currentExclude}`);
+  params.append("page", currentPage);
+  params.append("limit", booksPerPage);
+
+  if (currentSort && currentSort !== "date") params.append("sort", currentSort);
+  if (currentQuery) params.append("query", currentQuery);
+  if (currentMode && currentMode !== "partial") params.append("mode", currentMode);
+  if (currentExclude) params.append("exclude", currentExclude);
+
+  const queryString = params.toString();
+  const url = `/books/paginated?${queryString}`;
+
+  console.log(`Fetching: ${url}`);
   try {
-      const response = await fetch(`/books/paginated?page=${currentPage}&limit=${booksPerPage}&sort=${currentSort}&query=${encodeURIComponent(currentQuery)}&mode=${currentMode}&exclude=${encodeURIComponent(currentExclude)}`);
-      const { books, totalPages: total } = await response.json();
-      totalPages = total;
+    const response = await fetch(url);
+    const { books, totalPages: total } = await response.json();
+    totalPages = total;
 
-      const container = f('#books-container');
-      container.innerHTML = '';
+    const container = f("#books-container");
+    container.innerHTML = "";
 
-      books.forEach(book => {
-          const bookElement = document.createElement('div');
-          bookElement.innerHTML = `
-          <span style="display:flex;"><h2>${book.title}</h2>
-          <p>${book.page.length}p</p></span>
-          <img src="/books/${encodeURIComponent(book.cover)}" alt="${book.title}の表紙" width="150"><br>
-          <button onclick="location.href='/read/${book.title}'">読む</button>`;
-          container.appendChild(bookElement);
-      });
+    books.forEach((book) => {
+      const bookElement = document.createElement("div");
+      bookElement.innerHTML = `
+      <span style="display:flex;"><h2>${book.title}</h2>
+      <p>${book.page.length}p</p></span>
+      <img src="/books/${encodeURIComponent(book.cover)}" alt="${book.title}の表紙" width="150"><br>
+      <button onclick="location.href='/read/${book.title}'">読む</button>`;
+      container.appendChild(bookElement);
+    });
 
-      updatePaginationControls();
+    updatePaginationControls();
   } catch (error) {
-      console.error("書籍一覧の取得エラー:", error);
+    console.error("書籍一覧の取得エラー:", error);
   }
 }
+  
 function addSearchControls() {
   const searchContainer = document.createElement('div');
   searchContainer.id = "searchContainer";
@@ -165,7 +271,16 @@ document.addEventListener('DOMContentLoaded', () => {
       f('#books-container').after(controlsContainer);
   }
   else if (window.location.pathname.startsWith('/read/')) {
-    displayEbook();
+    const Params = new URLSearchParams(window.location.search);
+    if (!Params.size == 0) {
+      const page = Number(Params.get("p"));
+      console.log(page);
+      displayEbook(page);
+
+    } else {
+      displayEbook();
+    }
+
     setInterval(resizeImage, 30);
   } else {
     let miss_count = 0;
