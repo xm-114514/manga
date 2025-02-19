@@ -177,10 +177,17 @@ li a {
   top: -15px;
 }
 
+.menu li a {
+  font-size: 13px;
+}
 #sortContainer {
   text-align: center;
 }
+#sortContainer { 
+  color: #fff;
+}
 #searchContainer {
+  color: #fff;
   text-align: center;
 }
 #mode,#exclude,#sort,#search,#search-btn, footer > button {
