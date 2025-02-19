@@ -26,11 +26,12 @@ const fetch_fav_list = async () => {
     try {
         const response = await fetch("/fav");
         const books = await response.json();
-        fav_list.length = 0;
+        // fav_list.length = 0;
         fav_list.push(...books);
         return books;
     } catch (error) {
         console.error("お気に入りリストの取得エラー:", error);
+        alert(`お気に入りリストの取得エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
     }
 };
 
@@ -44,6 +45,7 @@ const send_fav_list = async () => {
         });
     } catch (error) {
         console.error("お気に入りリストの送信エラー:", error);
+        alert(`お気に入りリストの送信エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
     }
 };
 
@@ -128,9 +130,9 @@ async function displayEbook(page) {
             const imgWidth = event.target.clientWidth;
             const clickX = event.clientX - event.target.getBoundingClientRect().left;
             if (clickX < imgWidth / 2) {
-              changePage('R', ebook)
-            } else {
               changePage('L', ebook)
+            } else {
+              changePage('R', ebook)
             }
         });
         window.addEventListener("keydown", (k) => {
@@ -139,6 +141,7 @@ async function displayEbook(page) {
       } else f('#ebook-title').textContent = "書籍が見つかりません";
   } catch (error) {
     console.error("書籍の取得エラー:", error);
+    alert(`書籍の取得エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
   }
 }
 
@@ -184,9 +187,10 @@ async function displayBooks() {
     });
 
     updatePaginationControls();
-  } catch (error) {
-    console.error("書籍一覧の取得エラー:", error);
+  }catch (error) {
+    alert(`error displayBooks:\n${error.message}\n\n詳細:\n${error.stack}`);
   }
+
 }
   
 function addSearchControls() {
@@ -275,12 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Params.size == 0) {
       const page = Number(Params.get("p"));
       console.log(page);
-      displayEbook(page);
-
-    } else {
-      displayEbook();
     }
-
+    displayEbook();
     setInterval(resizeImage, 30);
   } else {
     let miss_count = 0;
@@ -315,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (e) {
         console.error(`エラー: ${e.message}`);
+        alert(`認証エラー:\n${e.message}\n\n詳細:\n${error.stack}`);
       }
     });
   }
