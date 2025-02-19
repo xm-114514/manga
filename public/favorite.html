@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お気に入りリスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #fav-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        li a {
+            text-decoration: none;
+            color: #0275d8;
+            flex-grow: 1;
+            text-align: left;
+        }
+        button {
+            padding: 5px 10px;
+            background: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <div id="view">
+        <img src="" alt="画像">
+        <div style="display: flex;">
+            <a>戻る</a>
+            <a>次へ</a>
+            <a id="remove" onclick="">削除</a>
+            <script>
+                const remove = document.querySelector("#remove");
+                remove.onclick = () => {
+                    if (favList.length === 0) return;
+
+                    const currentItem = favList[currentIndex];
+                    removeFavorite(currentIndex, currentItem);
+                };
+
+            </script>
+        </div>
+    </div>
+    <div>
+        <h1>お気に入りリスト</h1>
+        <div id="fav-container">
+            <p id="loading">読み込み中...</p>
+            <ul id="fav-list"></ul>
+        </div>
+    </div>
+    <style>
+        #view {
+            margin: 0 auto;
+            margin-top: 20px;
+            border-radius: 15px;
+            width: fit-content;
+            box-shadow: 0px 1px 12px 2px #9e9e9e;
+            width: 100vw;
+        }
+        #view a {
+            margin-left: 5px;
+            padding: 10px;
+        }
+        #view img {
+            width: inherit;
+        }
+    </style>
+
+    <script>
+        let favList = [];  // お気に入りリスト
+        let currentIndex = 0; // 現在の表示位置
+    
+        async function fetchFavList() {
+            try {
+                const response = await fetch('/fav');
+                if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
+    
+                favList = await response.json();
+                const favListElement = document.getElementById('fav-list');
+                const loadingMessage = document.getElementById('loading');
+    
+                favListElement.innerHTML = ""; // 一度リストをクリア
+    
+                if (favList.length === 0) {
+                    loadingMessage.innerHTML = "<h4>お気に入りがありません</h4><a href='/'>メニューに戻る</a>";
+                    document.getElementById('view').style.display = "none"; // 画像表示部分を非表示
+                    return;
+                } else {
+                    loadingMessage.style.display = "none";
+                    document.getElementById('view').style.display = "block"; // 画像表示部分を表示
+                }
+    
+                favList.forEach((item, index) => {
+                    const listItem = document.createElement("li");
+                    const link = document.createElement("a");
+                    link.href = "books/"+item;
+                    link.textContent = String(item).replace("http://","");
+                    link.target = "_blank";
+                    link.style.overflow = "overlay";
+    
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "削除";
+                    deleteButton.onclick = () => removeFavorite(index, item);
+    
+                    listItem.appendChild(link);
+                    listItem.appendChild(deleteButton);
+                    favListElement.appendChild(listItem);
+                });
+    
+                // 最初の画像を表示
+                currentIndex = 0;
+                updateImage();
+            } catch (error) {
+                console.error("お気に入りリストの取得エラー:", error);
+                document.getElementById('loading').textContent = "エラーが発生しました";
+            }
+        }
+    
+        function updateImage() {
+            const imgElement = document.querySelector("#view img");
+            if (favList.length > 0 && favList[currentIndex]) {
+                imgElement.src = "books/"+favList[currentIndex];
+            }
+        }
+    
+        function prevImage() {
+            if (favList.length === 0) return;
+            currentIndex = (currentIndex - 1 + favList.length) % favList.length;
+            updateImage();
+        }
+    
+        function nextImage() {
+            if (favList.length === 0) return;
+            currentIndex = (currentIndex + 1) % favList.length;
+            updateImage();
+        }
+    
+        async function removeFavorite(index, item) {
+            try {
+                const response = await fetch('/fav');
+                if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
+    
+                favList.splice(index, 1);
+    
+                await fetch('/upload_list', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(favList)
+                });
+                
+                fetchFavList();
+            } catch (error) {
+                console.error("お気に入りリストの削除エラー:", error);
+            }
+        }
+    
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchFavList();
+            document.querySelector("#view a:nth-child(1)").addEventListener("click", prevImage);
+            document.querySelector("#view a:nth-child(2)").addEventListener("click", nextImage);
+        });
+        document.querySelector("#view img").addEventListener("click", (event) => {
+            const imgWidth = event.target.clientWidth;
+            const clickX = event.clientX - event.target.getBoundingClientRect().left;
+
+            if (clickX < imgWidth / 2) {
+                prevImage();
+            } else {
+                nextImage();
+            }
+        });
+
+    </script>
+    
+</body>
+</html>
