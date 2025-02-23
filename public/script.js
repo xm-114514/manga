@@ -106,45 +106,54 @@ function changePage(direction, ebook) {
   f('#page-number').textContent = `ページ ${current + 1} / ${p}`;
   setTimeout(() => resizeImage(), 10);
 }
-
 async function displayEbook(page) {
   const urlParts = window.location.pathname.split('/');
-  const title = decodeURIComponent(urlParts[urlParts.length - 1]);
+  let title = urlParts[urlParts.length - 1] || undefined;
+  if (!title || title === '' || title === 'read') {
+    console.warn("無効なタイトル: ", title);
+    return;
+  }
+
+  title = decodeURIComponent(title);
   try {
-      const response = await fetch("/books");
-      const books = await response.json();
-      const ebook = books.find(book => book.title === title);
-      if (ebook) {
-        if (page) {
-          console.log("page",page)
-          f('#ebook-cover').src = `/books/${ebook.page[page]}`;
-          current = page;
+    const response = await fetch("/books");
+    const books = await response.json();
+    const ebook = books.find(book => decodeURIComponent(book.title) === title) || undefined;
+    console.log(ebook);
+    if (ebook) {
+      if (page && ebook.page[page]) {
+        f('#ebook-cover').src = `/books/${ebook.page[page]}`;
+        current = page;
+      } else {
+        f('#ebook-cover').src = `/books/${ebook.cover}`;
+      }
+      current_path = String(f('#ebook-cover').src).replace("/books/","").replace("http://"+String(location.host), "");
+      f('#ebook-title').textContent = ebook.title;
+      f('#next-page').addEventListener('click', () => changePage('R', ebook));
+      f('#previous-page').addEventListener('click', () => changePage('L', ebook));
+
+      document.querySelector("#ebook-cover").addEventListener("click", (event) => {
+        const imgWidth = event.target.clientWidth;
+        const clickX = event.clientX - event.target.getBoundingClientRect().left;
+        if (clickX < imgWidth / 2) {
+          changePage('L', ebook)
         } else {
-          f('#ebook-cover').src = `/books/${ebook.cover}`;
+          changePage('R', ebook)
         }
-        current_path = f('#ebook-cover').src;
-        f('#ebook-title').textContent = ebook.title;
-        f('#next-page').addEventListener('click', () => changePage('R', ebook));
-        f('#previous-page').addEventListener('click', () => changePage('L', ebook));
-        document.querySelector("#ebook-cover").addEventListener("click", (event) => {
-            const imgWidth = event.target.clientWidth;
-            const clickX = event.clientX - event.target.getBoundingClientRect().left;
-            if (clickX < imgWidth / 2) {
-              changePage('L', ebook)
-            } else {
-              changePage('R', ebook)
-            }
-        });
-        window.addEventListener("keydown", (k) => {
-          if (k.key == "ArrowRight") changePage('R', ebook); else if (k.key == "ArrowLeft") changePage('L', ebook);
-        });
-      } else f('#ebook-title').textContent = "書籍が見つかりません";
+      });
+
+      window.addEventListener("keydown", (k) => {
+        if (k.key == "ArrowRight") changePage('R', ebook);
+        else if (k.key == "ArrowLeft") changePage('L', ebook);
+      });
+    } else {
+      f('#ebook-title').textContent = "書籍が見つかりません";
+    }
   } catch (error) {
     console.error("書籍の取得エラー:", error);
     alert(`書籍の取得エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
   }
 }
-
 
 let currentPage = 1;
 let totalPages = 1;
@@ -279,8 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Params.size == 0) {
       const page = Number(Params.get("p"));
       console.log(page);
-    }
-    displayEbook();
+      displayEbook(page);
+    } else displayEbook();
     setInterval(resizeImage, 30);
   } else {
     let miss_count = 0;
