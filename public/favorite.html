@@ -53,22 +53,21 @@
 </head>
 <body>
     <div id="view">
-        <img src="" alt="画像">
         <div style="display: flex;">
             <a>戻る</a>
             <a>次へ</a>
-            <a id="remove" onclick="">削除</a>
+            <a id="remove" style=" position: absolute; right: 10px;">削除</a>
             <script>
                 const remove = document.querySelector("#remove");
                 remove.onclick = () => {
                     if (favList.length === 0) return;
-
                     const currentItem = favList[currentIndex];
                     removeFavorite(currentIndex, currentItem);
                 };
-
             </script>
         </div>
+        <img src="" alt="画像">
+
     </div>
     <div>
         <h1>お気に入りリスト</h1>
@@ -91,7 +90,9 @@
             padding: 10px;
         }
         #view img {
-            width: inherit;
+            width: auto;
+            max-width: 100vw;
+            max-height: 100vh;
         }
 
     </style>
