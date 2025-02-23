@@ -43,7 +43,12 @@ app.get('/menu', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'menu.html'));
 });
 app.get('/books', authMiddleware, (req, res) => {
-  res.json(ebooks);
+  try {
+    res.json(ebooks);
+  } catch (e) {
+    console.log(e);
+    res.status(401).json({ redirect: e });
+  }
 });
 
 app.get('/books/paginated', authMiddleware, (req, res) => {
@@ -113,9 +118,6 @@ app.get('/books/paginated', authMiddleware, (req, res) => {
   });
 });
 
-
-
-
 app.get('/read/:title', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ebook.html'));
 });
@@ -147,7 +149,7 @@ app.get('/books/paginated', authMiddleware, (req, res) => {
 
 const favoritesPath = path.join(__dirname, 'favorites.json');
 
-app.get('/fav', (req, res) => {
+app.get('/fav', authMiddleware, (req, res) => {
     try {
         if (!fs.existsSync(favoritesPath)) {
             return res.json([]); 
@@ -160,7 +162,7 @@ app.get('/fav', (req, res) => {
     }
 });
 
-app.post('/upload_list', (req, res) => {
+app.post('/upload_list', authMiddleware, (req, res) => {
     try {
         const favList = req.body;
         if (!Array.isArray(favList)) {
