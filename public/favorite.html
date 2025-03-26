@@ -62,7 +62,7 @@
                 remove.onclick = () => {
                     if (favList.length === 0) return;
                     const currentItem = favList[currentIndex];
-                    removeFavorite(currentIndex, currentItem);
+                    removeFavorite(currentIndex);
                 };
             </script>
         </div>
@@ -83,7 +83,7 @@
             border-radius: 15px;
             width: fit-content;
             box-shadow: 0px 1px 12px 2px #9e9e9e;
-            width: 100vw;
+            width: auto;
         }
         #view a {
             margin-left: 5px;
@@ -91,150 +91,263 @@
         }
         #view img {
             width: auto;
-            max-width: 100vw;
-            max-height: 100vh;
+            max-width: 90vw;
+            max-height: 92vh;
         }
 
     </style>
 
     <script>
-        let favList = [];  // お気に入りリスト
-        let currentIndex = 0; // 現在の表示位置
-    
-        async function fetchFavList() {
-            try {
-                const response = await fetch('/fav');
-                if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
-    
-                favList = await response.json();
-                const favListElement = document.getElementById('fav-list');
-                const loadingMessage = document.getElementById('loading');
-    
-                favListElement.innerHTML = ""; // 一度リストをクリア
-    
-                if (favList.length === 0) {
-                    loadingMessage.innerHTML = "<h4>お気に入りがありません</h4><a href='/'>メニューに戻る</a>";
-                    document.getElementById('view').style.display = "none"; // 画像表示部分を非表示
-                    return;
-                } else {
-                    loadingMessage.style.display = "none";
-                    document.getElementById('view').style.display = "block"; // 画像表示部分を表示
+let favList = [];  // お気に入りリスト
+let currentIndex = 0; // 現在の表示位置
+
+async function fetchFavList() {
+    try {
+        const response = await fetch('/fav');
+        if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
+
+        favList = await response.json();
+        const favListElement = document.getElementById('fav-list');
+        const loadingMessage = document.getElementById('loading');
+
+        favListElement.innerHTML = "";
+
+        if (favList.length === 0) {
+            loadingMessage.innerHTML = "<h4>お気に入りがありません</h4><a href='/'>メニューに戻る</a>";
+            document.getElementById('view').style.display = "none"; // 画像表示部分を非表示
+            return;
+        } else {
+            loadingMessage.style.display = "none";
+            document.getElementById('view').style.display = "block"; // 画像表示部分を表示
+        }
+
+        favList.forEach((item, index) => {
+            const listItem = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = "books/" + item;
+            link.textContent = String(item).replace("http://", "");
+            link.target = "_blank";
+            link.style.overflow = "overlay";
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "削除";
+            deleteButton.onclick = () => removeFavorite(index);
+
+            listItem.appendChild(link);
+            listItem.appendChild(deleteButton);
+            favListElement.appendChild(listItem);
+
+            let view = null;
+
+            function showPreview() {
+                if (!view) {
+                    view = document.createElement("img");
+                    view.src = "books/" + item;
+                    view.style.width = "auto";
+                    view.style.height = "100px";
+                    view.style.position = "absolute";
+                    view.style.left = "50%";
+                    view.style.transform = "translateX(-50%)";
+                    view.style.border = "1px solid #ddd";
+                    view.style.borderRadius = "5px";
+                    view.style.boxShadow = "0px 2px 8px rgba(0,0,0,0.2)";
+                    listItem.appendChild(view);
                 }
-    
-                favList.forEach((item, index) => {
-                    const listItem = document.createElement("li");
-                    const link = document.createElement("a");
-                    link.href = "books/" + item;
-                    link.textContent = String(item).replace("http://", "");
-                    link.target = "_blank";
-                    link.style.overflow = "overlay";
-
-                    const deleteButton = document.createElement("button");
-                    deleteButton.textContent = "削除";
-                    deleteButton.onclick = () => removeFavorite(index, item);
-
-                    listItem.appendChild(link);
-                    listItem.appendChild(deleteButton);
-
-                    let view = null;
-
-                    function showPreview() {
-                        if (!view) {
-                            view = document.createElement("img");
-                            view.src = "books/" + item;
-                            view.style.width = "auto";
-                            view.style.height = "100px";
-                            view.style.position = "absolute";
-                            view.style.left = "50%";
-                            view.style.transform = "translateX(-50%)";
-                            view.style.border = "1px solid #ddd";
-                            view.style.borderRadius = "5px";
-                            view.style.boxShadow = "0px 2px 8px rgba(0,0,0,0.2)";
-                            listItem.appendChild(view);
-                        }
-                    }
-
-                    function hidePreview() {
-                        if (view) {
-                            view.remove();
-                            view = null;
-                        }
-                    }
-
-                    // タップイベント（iPad対応）
-                    listItem.addEventListener("touchstart", showPreview);
-                    listItem.addEventListener("touchend", hidePreview);
-
-                    // マウスイベント（PC対応）
-                    listItem.addEventListener("mouseenter", showPreview);
-                    listItem.addEventListener("mouseleave", hidePreview);
-
-                    favListElement.appendChild(listItem);
-                });
-
-    
-                // 最初の画像を表示
-                currentIndex = 0;
-                updateImage();
-            } catch (error) {
-                console.error("お気に入りリストの取得エラー:", error);
-                document.getElementById('loading').textContent = "エラーが発生しました";
             }
-        }
-    
-        function updateImage() {
-            const imgElement = document.querySelector("#view img");
-            if (favList.length > 0 && favList[currentIndex]) {
-                imgElement.src = "books/"+favList[currentIndex];
+
+            function hidePreview() {
+                if (view) {
+                    view.remove();
+                    view = null;
+                }
             }
-        }
-    
-        function prevImage() {
-            if (favList.length === 0) return;
-            currentIndex = (currentIndex - 1 + favList.length) % favList.length;
+
+            // タップイベント（iPad対応）
+            listItem.addEventListener("touchstart", showPreview);
+            listItem.addEventListener("touchend", hidePreview);
+
+            // マウスイベント（PC対応）
+            listItem.addEventListener("mouseenter", showPreview);
+            listItem.addEventListener("mouseleave", hidePreview);
+
+            favListElement.appendChild(listItem);
+        });
+
+        updateImage();
+    } catch (error) {
+        console.error("お気に入りリストの取得エラー:", error);
+        document.getElementById('loading').textContent = "エラーが発生しました";
+    }
+}
+
+function updateImage() {
+    const imgElement = document.querySelector("#view img");
+    if (favList.length > 0 && favList[currentIndex]) {
+        imgElement.src = "books/" + favList[currentIndex];
+    } else {
+        imgElement.src = "";
+    }
+}
+
+function prevImage() {
+    if (favList.length === 0) return;
+    currentIndex = (currentIndex - 1 + favList.length) % favList.length;
+    updateImage();
+}
+
+function nextImage() {
+    if (favList.length === 0) return;
+    currentIndex = (currentIndex + 1) % favList.length;
+    updateImage();
+}
+function topImage() {
+    currentIndex = 0
+    updateImage();
+}
+async function removeFavorite(index) {
+    try {
+        favList.splice(index, 1); // お気に入りリストから削除
+
+        await fetch('/upload_list', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(favList)
+        });
+
+        // **最新のお気に入りリストを取得**
+        await fetchFavList();
+
+        // **表示中の画像を更新**
+        if (favList.length === 0) {
+            document.querySelector("#view img").src = "";
+        } else {
+            currentIndex = currentIndex % favList.length;
             updateImage();
         }
-    
-        function nextImage() {
-            if (favList.length === 0) return;
-            currentIndex = (currentIndex + 1) % favList.length;
-            updateImage();
-        }
-    
-        async function removeFavorite(index, item) {
-            try {
-                const response = await fetch('/fav');
-                if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
-    
-                favList.splice(index, 1);
-    
-                await fetch('/upload_list', {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(favList)
-                });
-                
-                fetchFavList();
-            } catch (error) {
-                console.error("お気に入りリストの削除エラー:", error);
-            }
-        }
-    
-        document.addEventListener("DOMContentLoaded", () => {
-            fetchFavList();
-            document.querySelector("#view a:nth-child(1)").addEventListener("click", prevImage);
-            document.querySelector("#view a:nth-child(2)").addEventListener("click", nextImage);
-        });
-        document.querySelector("#view img").addEventListener("click", (event) => {
-            const imgWidth = event.target.clientWidth;
-            const clickX = event.clientX - event.target.getBoundingClientRect().left;
 
-            if (clickX < imgWidth / 2) {
-                prevImage();
-            } else {
-                nextImage();
-            }
-        });
+        showPopup("お気に入りから削除しました");
+
+    } catch (error) {
+        console.error("お気に入りリストの削除エラー:", error);
+    }
+}
+
+function showPopup(message) {
+    const popup = document.createElement("div");
+    popup.id = "popup";
+    popup.textContent = message;
+
+    popup.style.cssText = `
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+        background: rgba(184, 184, 184, 0.8);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        border: 1px solid #fff;
+        opacity: 0;
+        transition: opacity 0.5s;
+        z-index: 9999;
+    `;
+
+    document.body.appendChild(popup);
+    fadeInOut(popup);
+}
+
+async function fadeInOut(element) {
+    await delay(10);
+    element.style.opacity = "1";
+    await delay(1500);
+    element.style.opacity = "0";
+    await delay(500);
+    element.remove();
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchFavList();
+    document.querySelector("#view a:nth-child(1)").addEventListener("click", prevImage);
+    document.querySelector("#view a:nth-child(2)").addEventListener("click", nextImage);
+});
+
+window.addEventListener("keydown", (k) => {
+        if (k.key == "ArrowRight") nextImage();
+        else if (k.key == "ArrowLeft") prevImage();
+        else if (k.key == "ArrowUp") topImage();
+      });
+
+
+document.querySelector("#view img").addEventListener("click", (event) => {
+    const imgWidth = event.target.clientWidth;
+    const clickX = event.clientX - event.target.getBoundingClientRect().left;
+
+    if (clickX < imgWidth / 2) {
+        prevImage();
+    } else {
+        nextImage();
+    }
+});
+
+// 🎮 **ゲームパッド対応**
+const DEAD_ZONE = 0.15;
+let previousButtonStates = {}; 
+
+window.addEventListener("gamepadconnected", (event) => {
+    console.log("🎮 ゲームパッドが接続されました:", event.gamepad.id);
+    pollGamepad();
+});
+
+window.addEventListener("gamepaddisconnected", (event) => {
+    console.log("❌ ゲームパッドが切断されました:", event.gamepad.id);
+});
+
+function applyDeadZone(value, threshold = DEAD_ZONE) {
+    return Math.abs(value) < threshold ? 0 : value;
+}
+
+function pollGamepad() {
+    if (!navigator.getGamepads) return;
+    const is_location = location.pathname.includes("/favorite.html");
+    function update() {
+        const gamepads = navigator.getGamepads();
+        if (gamepads[0]) {
+            const gp = gamepads[0];
+
+            gp.buttons.forEach((button, index) => {
+                if (button.pressed && !previousButtonStates[index]) {
+                    console.log(`ボタン ${index} が押されました`);
+                    if (is_location) {
+                        if (index == 2) {
+                            if (favList.length > 0) {
+                                removeFavorite(currentIndex);
+                            } else {
+                                alert("お気に入りリストが空です");
+                            }
+                        }
+                        if (index == 15) {
+                            nextImage();
+                        }
+                        if (index == 14) {
+                            prevImage();
+                        }
+                    } 
+                }
+                previousButtonStates[index] = button.pressed;
+            });
+        }
+        requestAnimationFrame(update);
+    }
+
+    update();
+}
+
+
 
     </script>
     
