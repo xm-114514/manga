@@ -4,7 +4,7 @@ const path = require('path');
 const booksDir = path.join(__dirname, 'books');
 const outputPath = path.join(__dirname, 'books', 'ebooks.json');
 
-const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif',".mp4",".avif"];
 
 async function generateEbooksJson() {
     const ebooks = [];
