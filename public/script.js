@@ -26,7 +26,6 @@ const fetch_fav_list = async () => {
     try {
         const response = await fetch("/fav");
         const books = await response.json();
-        // fav_list.length = 0;
         fav_list.push(...books);
         return books;
     } catch (error) {
@@ -34,50 +33,110 @@ const fetch_fav_list = async () => {
         alert(`お気に入りリストの取得エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
     }
 };
+async function fav() {
+  if (!current_path || fav_list.includes(current_path)) return;
 
-const send_fav_list = async () => {
-  if (fav_list.length == 0) return;
-    try {
-        await fetch("/upload_list", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(fav_list)
-        });
-    } catch (error) {
-        console.error("お気に入りリストの送信エラー:", error);
-        alert(`お気に入りリストの送信エラー:\n${error.message}\n\n詳細:\n${error.stack}`);
-    }
-};
+  fav_list.push(current_path);
+  await send_fav_list(); // 確実に送信を待つ
 
-function fav() {
-    if (!current_path || fav_list.includes(current_path)) return;
-
-    fav_list.push(current_path);
-    send_fav_list();
-
-    const popup = document.createElement("div");
-    popup.id = "popup";
-    popup.textContent = `${current_path} をお気に入りに追加 👍`;
-
-    popup.style.cssText = `
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        padding: 10px;
-        background: rgba(184, 184, 184, 0.8);
-        color: #fff;
-        text-align: center;
-        border-radius: 6px;
-        border: 1px solid #fff;
-        opacity: 0;
-        transition: opacity 0.5s;
-        z-index: 9999;
-    `;
-
-    document.body.appendChild(popup);
-    fadeInOut(popup);
+  showPopup(`${decodeURIComponent(current_path)} をお気に入りに追加 👍`);
 }
+
+async function removeFavorite() {
+  if (!current_path) return;
+
+  try {
+      const response = await fetch('/fav');
+      if (!response.ok) throw new Error("お気に入りリストの取得に失敗");
+
+      const books = await response.json();
+      fav_list.length = 0; // 配列を初期化して最新データをセット
+      fav_list.push(...books);
+
+      const index = fav_list.indexOf(current_path);
+      if (index !== -1) {
+          fav_list.splice(index, 1);
+          await send_fav_list(); // 削除後にリストを送信
+          showPopup(`${decodeURIComponent(current_path)} をお気に入りから削除`);
+      } else {
+          console.warn("削除対象が見つかりません:", current_path);
+      }
+
+  } catch (error) {
+      console.error("お気に入りリストの削除エラー:", error);
+  }
+}
+
+async function send_fav_list() {
+  try {
+      await fetch("/upload_list", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fav_list)
+      });
+  } catch (error) {
+      console.error("お気に入りリストの送信エラー:", error);
+  }
+}
+
+function showPopup(message) {
+  const popup = document.createElement("div");
+  popup.id = "popup";
+  popup.textContent = message;
+
+  popup.style.cssText = `
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px;
+      background: rgba(184, 184, 184, 0.8);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      border: 1px solid #fff;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 9999;
+  `;
+
+  document.body.appendChild(popup);
+  fadeInOut(popup);
+}
+
+function pollGamepad() {
+  if (!navigator.getGamepads) return;
+  // const is_location = location.pathname.includes("/menu");
+  function update() {
+      const gamepads = navigator.getGamepads();
+      if (gamepads[0]) {
+          const gp = gamepads[0];
+
+          gp.buttons.forEach((button, index) => {
+              if (button.pressed && !previousButtonStates[index]) {
+                  console.log(`ボタン ${index} が押されました`);
+                  if (index == 2) {
+                    current && removeFavorite(current);
+                  }
+                  if (index == 15) {
+                      document.querySelector('[id="next-page"]').click();
+                  }
+                  if (index == 14) {
+                      document.querySelector('[id="previous-page"]').click();
+                  }
+                  if (index == 3) {
+                      fav();
+                  }
+              }
+              previousButtonStates[index] = button.pressed;
+          });
+      }
+      requestAnimationFrame(update);
+  }
+
+  update();
+}
+
 
 async function fadeInOut(element) {
     await delay(10);
@@ -92,8 +151,21 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-document.addEventListener("DOMContentLoaded", fetch_fav_list);
+const DEAD_ZONE = 0.15;
+let previousButtonStates = {}; 
 
+window.addEventListener("gamepadconnected", (event) => {
+    console.log("🎮 ゲームパッドが接続されました:", event.gamepad.id);
+    pollGamepad();
+});
+
+window.addEventListener("gamepaddisconnected", (event) => {
+    console.log("❌ ゲームパッドが切断されました:", event.gamepad.id);
+});
+
+function applyDeadZone(value, threshold = DEAD_ZONE) {
+    return Math.abs(value) < threshold ? 0 : value;
+}
 
 
 function changePage(direction, ebook) {
@@ -191,7 +263,7 @@ async function displayBooks() {
       <span style="display:flex;"><h2>${book.title}</h2>
       <p>${book.page.length}p</p></span>
       <img src="/books/${encodeURIComponent(book.cover)}" alt="${book.title}の表紙" width="150"><br>
-      <button onclick="location.href='/read/${book.title}'">読む</button>`;
+      <button onclick="location.href='/read/${encodeURIComponent(book.title)}'">読む</button>`;
       container.appendChild(bookElement);
     });
 
@@ -230,12 +302,12 @@ function updatePaginationControls() {
   const controls = f('#pagination-controls', true);
   for (let i = 0; i < controls.length; i++) {
       controls[i].innerHTML = `
-      <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>前のページ</button>
+      <button id="previous-page" ${currentPage === 1 ? 'disabled' : ''}>前のページ</button>
       <span>ページ ${currentPage} / ${totalPages}</span>
       <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>次のページ</button>
       `;
 
-      f('#prev-page', true)[i].addEventListener('click', () => {
+      f('#previous-page', true)[i].addEventListener('click', () => {
           if (currentPage > 1) {
               currentPage--;
               displayBooks();
@@ -275,6 +347,7 @@ function addSortControls() {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname === '/menu') {
+      fetch_fav_list()
       addSearchControls(); 
       addSortControls();  
       displayBooks();
@@ -284,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
       f('#books-container').after(controlsContainer);
   }
   else if (window.location.pathname.startsWith('/read/')) {
+    fetch_fav_list();
     const Params = new URLSearchParams(window.location.search);
     if (!Params.size == 0) {
       const page = Number(Params.get("p"));
@@ -337,5 +411,7 @@ function resizeWindow() {
   if (w < 768)  Container.ariaLabel = 'mobile-container'; else if (w >= 768 && w < 1024) Container.ariaLabel = 'tablet-container'; else Container.ariaLabel = 'desktop-container';
   
 }
+
+
 resizeWindow();
 window.addEventListener("resize", resizeWindow)
